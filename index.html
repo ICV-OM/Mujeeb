@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>مجيب — المساعد الذكي | هيئة المشاريع والمناقصات والمحتوى المحلي</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="theme-color" content="#0E1F3D">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&family=Reem+Kufi:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+/* ═══════════ منظومة التصميم: كحلي / ذهبي / أبيض عاجي ═══════════ */
+:root{
+  --navy:#0E1F3D; --navy-2:#16305C; --navy-3:#1F3F73;
+  --gold:#C79A5B; --gold-light:#E4C79A; --gold-dark:#9A7238;
+  --ivory:#FAF7F1; --paper:#FFFFFF; --ink:#1C2432; --muted:#6B7486;
+  --teal:#2FB8AC; --green:#2E9E6B; --red:#C64545;
+  --shadow:0 8px 30px rgba(14,31,61,.10); --radius:18px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{font-family:'Tajawal',sans-serif;background:var(--ivory);color:var(--ink);min-height:100dvh;overflow-x:hidden}
+h1,h2,h3,.kufi{font-family:'Reem Kufi','Tajawal',sans-serif}
+button{font-family:inherit;cursor:pointer;border:none}
+input,textarea,select{font-family:inherit;font-size:15px}
+::selection{background:var(--gold-light)}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+
+/* ═══════════ شاشة الدخول ═══════════ */
+.login-wrap{min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:linear-gradient(160deg,var(--navy) 0%,var(--navy-2) 55%,#1A3A6E 100%);position:relative;overflow:hidden;padding:24px}
+.login-wrap::before{content:'';position:absolute;inset:0;
+  background-image:radial-gradient(circle at 85% 15%,rgba(199,154,91,.14),transparent 42%),
+                   radial-gradient(circle at 10% 90%,rgba(47,184,172,.08),transparent 40%)}
+.geo{position:absolute;width:340px;height:340px;border:1px solid rgba(199,154,91,.22);transform:rotate(45deg);border-radius:52px}
+.geo.g1{top:-140px;left:-140px}.geo.g2{bottom:-160px;right:-160px;width:420px;height:420px}
+.login-card{position:relative;z-index:2;background:rgba(255,255,255,.98);border-radius:26px;padding:38px 32px;width:100%;max-width:420px;
+  box-shadow:0 24px 70px rgba(0,0,0,.35);text-align:center;animation:rise .6s cubic-bezier(.2,.8,.3,1)}
+@keyframes rise{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:none}}
+.login-card img.brand{max-width:270px;width:100%;margin-bottom:14px}
+.divider-gold{width:64px;height:3px;background:linear-gradient(90deg,var(--gold),var(--gold-light));margin:6px auto 16px;border-radius:2px}
+.mujeeb-name{font-size:40px;font-weight:700;color:var(--navy);letter-spacing:.5px}
+.mujeeb-name .dot{color:var(--gold)}
+.login-sub{color:var(--muted);font-size:14px;margin:4px 0 24px}
+.field{text-align:right;margin-bottom:14px}
+.field label{display:block;font-size:13px;font-weight:700;color:var(--navy);margin-bottom:6px}
+.field input{width:100%;padding:13px 15px;border:1.6px solid #E3E0D8;border-radius:13px;background:#FCFBF8;transition:.2s}
+.field input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(199,154,91,.15)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:13px 22px;border-radius:13px;font-weight:800;font-size:15px;transition:.2s}
+.btn:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.btn-navy{background:var(--navy);color:#fff;width:100%}
+.btn-navy:hover{background:var(--navy-3);transform:translateY(-1px)}
+.btn-gold{background:linear-gradient(135deg,var(--gold),var(--gold-dark));color:#fff}
+.btn-ghost{background:transparent;color:var(--navy);border:1.6px solid #E3E0D8}
+.btn-ghost:hover{border-color:var(--gold)}
+.login-err{color:var(--red);font-size:13px;min-height:18px;margin-top:8px;font-weight:700}
+.login-foot{position:relative;z-index:2;color:rgba(255,255,255,.55);font-size:12px;margin-top:22px;text-align:center;line-height:1.9}
+
+/* ═══════════ الهيكل العام ═══════════ */
+.app{display:none;min-height:100dvh;flex-direction:column}
+.topbar{background:var(--navy);color:#fff;padding:12px 18px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:50;
+  box-shadow:0 4px 18px rgba(14,31,61,.28)}
+.topbar .emblem{width:40px;height:40px;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;padding:4px}
+.topbar .emblem img{width:100%;height:100%;object-fit:contain}
+.topbar h1{font-size:19px;font-weight:700;line-height:1.2}
+.topbar h1 small{display:block;font-family:'Tajawal';font-size:11px;font-weight:400;color:var(--gold-light);margin-top:2px}
+.topbar .grow{flex:1}
+.chip-user{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:99px;padding:6px 13px;font-size:12.5px;font-weight:700;white-space:nowrap}
+.icon-btn{background:rgba(255,255,255,.12);color:#fff;width:38px;height:38px;border-radius:11px;font-size:17px;display:flex;align-items:center;justify-content:center;transition:.2s}
+.icon-btn:hover{background:var(--gold)}
+.main{flex:1;width:100%;max-width:980px;margin:0 auto;padding:18px 16px 110px}
+
+/* ═══════════ بطاقة النصيحة اليومية ═══════════ */
+.tip-card{background:linear-gradient(135deg,var(--navy) 0%,var(--navy-3) 100%);color:#fff;border-radius:var(--radius);
+  padding:18px 20px;margin-bottom:18px;position:relative;overflow:hidden;box-shadow:var(--shadow)}
+.tip-card::after{content:'❝';position:absolute;left:14px;top:-14px;font-size:110px;color:rgba(199,154,91,.18);font-family:serif}
+.tip-tag{display:inline-flex;align-items:center;gap:6px;background:rgba(199,154,91,.2);color:var(--gold-light);
+  border:1px solid rgba(199,154,91,.45);padding:4px 12px;border-radius:99px;font-size:12px;font-weight:800;margin-bottom:10px}
+.tip-text{font-size:15.5px;line-height:1.95;position:relative;z-index:1}
+.tip-src{margin-top:8px;font-size:12px;color:var(--gold-light);font-weight:700}
+
+/* ═══════════ المحادثة ═══════════ */
+.chat-box{background:var(--paper);border-radius:var(--radius);box-shadow:var(--shadow);display:flex;flex-direction:column;
+  height:calc(100dvh - 320px);min-height:420px;overflow:hidden;border:1px solid #EFEBE2}
+.chat-head{padding:13px 18px;border-bottom:1px solid #F0ECE3;display:flex;align-items:center;gap:10px;background:#FDFCF9}
+.avatar-m{width:42px;height:42px;border-radius:50%;background:radial-gradient(circle at 32% 28%,var(--gold-light),var(--gold-dark));
+  display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Reem Kufi';font-size:20px;font-weight:700;box-shadow:0 3px 10px rgba(154,114,56,.35)}
+.chat-head b{font-size:16px;color:var(--navy)}
+.chat-head .status{font-size:11.5px;color:var(--green);font-weight:700}
+.chat-head .status::before{content:'●';margin-left:4px;font-size:9px}
+.msgs{flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:14px;background:
+  repeating-linear-gradient(45deg,transparent 0 34px,rgba(199,154,91,.025) 34px 35px),#FBFAF6}
+.msg{max-width:82%;padding:12px 16px;border-radius:16px;font-size:14.5px;line-height:1.9;animation:pop .25s ease;white-space:pre-wrap;word-break:break-word}
+@keyframes pop{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.msg.user{align-self:flex-start;background:var(--navy);color:#fff;border-bottom-left-radius:5px}
+.msg.bot{align-self:flex-end;background:#fff;border:1px solid #EDE8DD;border-bottom-right-radius:5px;box-shadow:0 3px 12px rgba(14,31,61,.06)}
+.msg.bot .src-line{display:block;margin-top:10px;padding-top:8px;border-top:1px dashed var(--gold-light);font-size:12px;color:var(--gold-dark);font-weight:800}
+.msg.bot strong{color:var(--navy)}
+.typing{align-self:flex-end;background:#fff;border:1px solid #EDE8DD;border-radius:16px;border-bottom-right-radius:5px;padding:14px 20px;display:flex;gap:5px}
+.typing span{width:8px;height:8px;border-radius:50%;background:var(--gold);animation:blink 1.2s infinite}
+.typing span:nth-child(2){animation-delay:.2s}.typing span:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:.25}40%{opacity:1}}
+.suggest{display:flex;gap:8px;flex-wrap:wrap;padding:0 18px 12px;background:#FBFAF6}
+.suggest button{background:#fff;border:1.4px solid var(--gold-light);color:var(--gold-dark);border-radius:99px;padding:7px 14px;font-size:12.5px;font-weight:700;transition:.2s}
+.suggest button:hover{background:var(--gold);color:#fff}
+.chat-input{display:flex;gap:10px;padding:13px 15px;border-top:1px solid #F0ECE3;background:#fff}
+.chat-input textarea{flex:1;border:1.6px solid #E7E2D7;border-radius:14px;padding:11px 15px;resize:none;height:48px;max-height:120px;background:#FCFBF8;line-height:1.6}
+.chat-input textarea:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(199,154,91,.13)}
+.send-btn{width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,var(--gold),var(--gold-dark));color:#fff;font-size:19px;display:flex;align-items:center;justify-content:center;transition:.2s;flex-shrink:0}
+.send-btn:hover{transform:scale(1.06)}
+.send-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+
+/* ═══════════ شريط التنقل السفلي (جوال) ═══════════ */
+.bottom-nav{position:fixed;bottom:0;right:0;left:0;background:#fff;border-top:1px solid #ECE7DC;display:flex;z-index:60;
+  padding-bottom:env(safe-area-inset-bottom);box-shadow:0 -6px 24px rgba(14,31,61,.08)}
+.bottom-nav button{flex:1;padding:10px 4px 9px;background:none;color:var(--muted);font-size:11.5px;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:3px}
+.bottom-nav button .ni{font-size:21px;line-height:1}
+.bottom-nav button.active{color:var(--navy)}
+.bottom-nav button.active .ni{color:var(--gold)}
+
+/* ═══════════ لوحات وبطاقات ═══════════ */
+.panel{display:none}
+.panel.active{display:block;animation:pop .3s ease}
+.grid-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px}
+.stat{background:#fff;border-radius:16px;padding:16px;border:1px solid #EFEBE2;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.stat::before{content:'';position:absolute;top:0;right:0;width:4px;height:100%;background:linear-gradient(var(--gold),var(--gold-dark))}
+.stat .num{font-size:30px;font-weight:800;color:var(--navy);font-family:'Reem Kufi'}
+.stat .lbl{font-size:12.5px;color:var(--muted);font-weight:700;margin-top:2px}
+.card{background:#fff;border-radius:var(--radius);border:1px solid #EFEBE2;box-shadow:var(--shadow);padding:20px;margin-bottom:16px}
+.card h3{color:var(--navy);font-size:17px;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.card h3::before{content:'';width:10px;height:10px;background:var(--gold);border-radius:3px;transform:rotate(45deg)}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{background:var(--navy);color:#fff;padding:10px 12px;text-align:right;font-size:12.5px;white-space:nowrap}
+th:first-child{border-radius:0 10px 0 0}th:last-child{border-radius:10px 0 0 0}
+td{padding:10px 12px;border-bottom:1px solid #F2EEE5;vertical-align:top}
+tr:hover td{background:#FBF8F2}
+.badge{display:inline-block;padding:3px 11px;border-radius:99px;font-size:11.5px;font-weight:800}
+.badge.on{background:#E4F5EC;color:var(--green)}
+.badge.off{background:#FCE9E9;color:var(--red)}
+.badge.role-a{background:#EFE4D2;color:var(--gold-dark)}
+.badge.role-e{background:#E3EAF6;color:var(--navy-3)}
+.mini-btn{padding:6px 12px;border-radius:9px;font-size:12px;font-weight:800;background:#F1EDE4;color:var(--navy);transition:.2s}
+.mini-btn:hover{background:var(--gold);color:#fff}
+.mini-btn.danger:hover{background:var(--red)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:640px){.form-row{grid-template-columns:1fr}}
+.field textarea{width:100%;padding:12px 15px;border:1.6px solid #E3E0D8;border-radius:13px;background:#FCFBF8;min-height:90px;line-height:1.8}
+.field textarea:focus,.field select:focus{outline:none;border-color:var(--gold)}
+.field select{width:100%;padding:12px 15px;border:1.6px solid #E3E0D8;border-radius:13px;background:#FCFBF8}
+.toast{position:fixed;bottom:90px;right:50%;transform:translateX(50%);background:var(--navy);color:#fff;padding:13px 24px;border-radius:14px;
+  font-weight:800;font-size:14px;z-index:200;box-shadow:0 10px 30px rgba(0,0,0,.3);display:none;animation:pop .3s}
+.toast.show{display:block}
+.toast.err{background:var(--red)}
+.rate-row{display:flex;gap:8px;margin-top:8px;align-self:flex-end}
+.rate-row button{background:#fff;border:1.3px solid #E7E2D7;border-radius:9px;padding:5px 12px;font-size:13px;transition:.2s}
+.rate-row button:hover{border-color:var(--gold);transform:scale(1.05)}
+.section-note{background:#FBF6EC;border:1px solid var(--gold-light);border-radius:13px;padding:13px 16px;font-size:13px;line-height:1.9;color:var(--gold-dark);margin-bottom:16px}
+.tabs-admin{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.tabs-admin button{padding:10px 18px;border-radius:12px;background:#fff;border:1.5px solid #E7E2D7;font-weight:800;font-size:13.5px;color:var(--muted);transition:.2s}
+.tabs-admin button.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+.empty{padding:36px;text-align:center;color:var(--muted);font-size:14px;line-height:2}
+.empty .big{font-size:40px;display:block;margin-bottom:8px}
+@media(min-width:760px){.bottom-nav{max-width:520px;right:50%;transform:translateX(50%);border-radius:18px 18px 0 0;border:1px solid #ECE7DC;border-bottom:none}}
+</style>
+</head>
+<body>
+
+<!-- ══════════════ شاشة الدخول ══════════════ -->
+<div class="login-wrap" id="loginScreen">
+  <div class="geo g1"></div><div class="geo g2"></div>
+  <div class="login-card">
+    <img class="brand" src="logo.png" alt="هيئة المشاريع والمناقصات والمحتوى المحلي">
+    <div class="divider-gold"></div>
+    <div class="mujeeb-name kufi">مجيب<span class="dot">.</span></div>
+    <div class="login-sub">المساعد الذكي للرد على استفسارات الموظفين من المصادر المعتمدة</div>
+    <div class="field">
+      <label for="lEmail">البريد الإلكتروني</label>
+      <input id="lEmail" type="email" placeholder="name@authority.om" autocomplete="username">
+    </div>
+    <div class="field">
+      <label for="lPin">الرمز السري (PIN)</label>
+      <input id="lPin" type="password" inputmode="numeric" placeholder="••••" autocomplete="current-password">
+    </div>
+    <button class="btn btn-navy" onclick="doLogin()">تسجيل الدخول</button>
+    <div class="login-err" id="loginErr"></div>
+  </div>
+  <div class="login-foot">هيئة المشاريع والمناقصات والمحتوى المحلي — سلطنة عُمان<br>مجيب v1.0</div>
+</div>
+
+<!-- ══════════════ التطبيق ══════════════ -->
+<div class="app" id="app">
+  <header class="topbar">
+    <div class="emblem"><img src="icons/icon-192.png" alt=""></div>
+    <h1 class="kufi">مجيب<small>هيئة المشاريع والمناقصات والمحتوى المحلي</small></h1>
+    <div class="grow"></div>
+    <span class="chip-user" id="userChip"></span>
+    <button class="icon-btn" onclick="logout()" title="تسجيل الخروج" aria-label="تسجيل الخروج">⎋</button>
+  </header>
+
+  <main class="main">
+    <!-- ═══ لوحة الموظف: المحادثة ═══ -->
+    <section class="panel active" id="panel-chat">
+      <div class="tip-card" id="tipCard" style="display:none">
+        <span class="tip-tag">✦ نصيحة اليوم الإدارية</span>
+        <div class="tip-text" id="tipText"></div>
+        <div class="tip-src" id="tipSrc"></div>
+      </div>
+      <div class="chat-box">
+        <div class="chat-head">
+          <div class="avatar-m">م</div>
+          <div><b>مجيب</b><div class="status">جاهز للإجابة من المصادر المعتمدة</div></div>
+        </div>
+        <div class="msgs" id="msgs"></div>
+        <div class="suggest" id="suggest">
+          <button onclick="quickAsk(this)">ما شروط استحقاق بدل الأمان الوظيفي؟</button>
+          <button onclick="quickAsk(this)">كيف يتم احتساب تقييم الأداء في إجادة؟</button>
+          <button onclick="quickAsk(this)">كم مدة بدل إجازة الأمومة والأبوة؟</button>
+          <button onclick="quickAsk(this)">ما متطلبات الحصول على مرتبة ممتاز؟</button>
+        </div>
+        <div class="chat-input">
+          <textarea id="qInput" placeholder="اكتب سؤالك هنا..." rows="1"
+            onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendQ();}"></textarea>
+          <button class="send-btn" id="sendBtn" onclick="sendQ()" aria-label="إرسال">➤</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ لوحة الموظف: سجلي ═══ -->
+    <section class="panel" id="panel-history">
+      <div class="card"><h3>سجل استفساراتي</h3>
+        <div class="table-wrap"><table>
+          <thead><tr><th>التاريخ</th><th>السؤال</th><th>الإجابة</th></tr></thead>
+          <tbody id="myHistBody"></tbody>
+        </table></div>
+        <div class="empty" id="myHistEmpty" style="display:none"><span class="big">🗂️</span>لا توجد استفسارات مسجلة بعد — ابدأ بسؤال مجيب!</div>
+      </div>
+    </section>
+
+    <!-- ═══ لوحة الموظف: المصادر ═══ -->
+    <section class="panel" id="panel-sources">
+      <div class="card"><h3>المصادر المعتمدة</h3>
+        <div class="section-note">يجيب مجيب حصرياً من هذه المصادر الرسمية المعتمدة لدى الهيئة، ولا يجتهد من خارجها.</div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>المصدر</th><th>التصنيف</th><th>الوصف</th></tr></thead>
+          <tbody id="empDocsBody"></tbody>
+        </table></div>
+      </div>
+    </section>
+
+    <!-- ═══ لوحة المسؤول ═══ -->
+    <section class="panel" id="panel-admin">
+      <div class="grid-stats">
+        <div class="stat"><div class="num" id="stDocs">—</div><div class="lbl">مصدر معتمد</div></div>
+        <div class="stat"><div class="num" id="stChunks">—</div><div class="lbl">مقطع معرفي</div></div>
+        <div class="stat"><div class="num" id="stConvs">—</div><div class="lbl">استفسار مسجّل</div></div>
+        <div class="stat"><div class="num" id="stUsers">—</div><div class="lbl">مستخدم</div></div>
+      </div>
+
+      <div class="tabs-admin">
+        <button class="active" onclick="adminTab(this,'aDocs')">📚 المصادر</button>
+        <button onclick="adminTab(this,'aTips')">💡 النصائح اليومية</button>
+        <button onclick="adminTab(this,'aUsers')">👥 المستخدمون</button>
+        <button onclick="adminTab(this,'aConvs')">💬 سجل المحادثات</button>
+        <button onclick="adminTab(this,'aSettings')">⚙️ الإعدادات</button>
+      </div>
+
+      <!-- المصادر -->
+      <div id="aDocs" class="admin-sub">
+        <div class="card"><h3>إضافة / تحديث مصدر معرفي</h3>
+          <div class="section-note">لإضافة ملف جديد: انسخ نص الملف (أو المواد/الأقسام المطلوبة) والصقه هنا. سيقوم النظام بتقسيمه تلقائياً إلى مقاطع معرفية يبحث فيها مجيب. لتحديث مصدر موجود اختره من القائمة وسيُستبدل محتواه.</div>
+          <div class="form-row">
+            <div class="field"><label>عنوان المصدر</label><input id="dTitle" placeholder="مثال: لائحة شؤون الموظفين"></div>
+            <div class="field"><label>التصنيف</label><input id="dCat" placeholder="مثال: تشريعات / أداء وظيفي / إجراءات"></div>
+          </div>
+          <div class="field"><label>تحديث مصدر موجود (اختياري)</label><select id="dExisting"><option value="">— مصدر جديد —</option></select></div>
+          <div class="field"><label>المحتوى النصي الكامل</label><textarea id="dContent" style="min-height:160px" placeholder="الصق نص الملف هنا... التقسيم يتم تلقائياً عند كلمة (المادة) أو كل ~1500 حرف"></textarea></div>
+          <button class="btn btn-gold" onclick="saveDoc()">حفظ ومعالجة المصدر</button>
+          <button class="btn btn-ghost" onclick="reimportKB()" style="margin-inline-start:8px">↺ إعادة استيراد قاعدة المعرفة الأساسية</button>
+        </div>
+        <div class="card"><h3>المصادر الحالية</h3>
+          <div class="table-wrap"><table>
+            <thead><tr><th>العنوان</th><th>التصنيف</th><th>المقاطع</th><th>الحالة</th><th>إجراءات</th></tr></thead>
+            <tbody id="adminDocsBody"></tbody>
+          </table></div>
+        </div>
+      </div>
+
+      <!-- النصائح -->
+      <div id="aTips" class="admin-sub" style="display:none">
+        <div class="card"><h3>إضافة نصيحة إدارية</h3>
+          <div class="field"><label>نص النصيحة</label><textarea id="tText" placeholder="نصيحة إدارية تعرض للموظفين يومياً بالتناوب..."></textarea></div>
+          <div class="field"><label>المصدر</label><input id="tSrc" placeholder="مثال: دليل إجادة — المادة/القسم"></div>
+          <button class="btn btn-gold" onclick="saveTip()">إضافة النصيحة</button>
+        </div>
+        <div class="card"><h3>النصائح الحالية</h3>
+          <div class="table-wrap"><table>
+            <thead><tr><th>#</th><th>النصيحة</th><th>المصدر</th><th>الحالة</th><th>إجراءات</th></tr></thead>
+            <tbody id="tipsBody"></tbody>
+          </table></div>
+        </div>
+      </div>
+
+      <!-- المستخدمون -->
+      <div id="aUsers" class="admin-sub" style="display:none">
+        <div class="card"><h3>إضافة مستخدم</h3>
+          <div class="form-row">
+            <div class="field"><label>الاسم الكامل</label><input id="uName"></div>
+            <div class="field"><label>البريد الإلكتروني</label><input id="uEmail" type="email"></div>
+            <div class="field"><label>الرمز السري (PIN)</label><input id="uPin"></div>
+            <div class="field"><label>الدور</label><select id="uRole"><option value="employee">موظف</option><option value="admin">مسؤول</option></select></div>
+          </div>
+          <div class="field"><label>الدائرة / القسم</label><input id="uDept"></div>
+          <button class="btn btn-gold" onclick="saveUser()">إضافة المستخدم</button>
+        </div>
+        <div class="card"><h3>المستخدمون</h3>
+          <div class="table-wrap"><table>
+            <thead><tr><th>الاسم</th><th>البريد</th><th>الدور</th><th>الحالة</th><th>إجراءات</th></tr></thead>
+            <tbody id="usersBody"></tbody>
+          </table></div>
+        </div>
+      </div>
+
+      <!-- المحادثات -->
+      <div id="aConvs" class="admin-sub" style="display:none">
+        <div class="card"><h3>آخر 100 استفسار</h3>
+          <div class="table-wrap"><table>
+            <thead><tr><th>التاريخ</th><th>المستخدم</th><th>السؤال</th><th>الإجابة</th><th>التقييم</th></tr></thead>
+            <tbody id="convsBody"></tbody>
+          </table></div>
+        </div>
+      </div>
+
+      <!-- الإعدادات -->
+      <div id="aSettings" class="admin-sub" style="display:none">
+        <div class="card"><h3>إعدادات مجيب</h3>
+          <div class="field"><label>اسم المساعد</label><input id="sName"></div>
+          <div class="field"><label>رسالة الترحيب</label><textarea id="sWelcome"></textarea></div>
+          <div class="form-row">
+            <div class="field"><label>نطاق الإجابة</label>
+              <select id="sScope"><option value="strict">صارم — من الملفات فقط</option><option value="assist">مرن — يسمح بنصائح عامة</option></select>
+            </div>
+            <div class="field"><label>النصيحة اليومية</label>
+              <select id="sTip"><option value="true">مفعّلة</option><option value="false">معطّلة</option></select>
+            </div>
+          </div>
+          <button class="btn btn-gold" onclick="saveSettings()">حفظ الإعدادات</button>
+        </div>
+        <div class="card"><h3>طريقة الاتصال بنموذج الذكاء الاصطناعي</h3>
+          <div class="section-note" id="aiModeNote">يحاول التطبيق أولاً الاتصال عبر دالة Supabase السحابية (mujeeb-chat)، وإن لم تكن منشورة يتصل مباشرة بواجهة Anthropic (يعمل تلقائياً داخل معاينة Claude).</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- شريط التنقل السفلي -->
+  <nav class="bottom-nav" id="bottomNav">
+    <button class="active" data-p="chat" onclick="go('chat',this)"><span class="ni">💬</span>مجيب</button>
+    <button data-p="history" onclick="go('history',this)"><span class="ni">🗂️</span>سجلي</button>
+    <button data-p="sources" onclick="go('sources',this)"><span class="ni">📚</span>المصادر</button>
+    <button data-p="admin" id="navAdmin" style="display:none" onclick="go('admin',this)"><span class="ni">🛠️</span>الإدارة</button>
+  </nav>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ═══════════════ الإعدادات — عدّل هنا فقط ═══════════════ */
+const SUPABASE_URL  = 'https://nsucwqbccrhraqcmsvrn.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5zdWN3cWJjY3JocmFxY21zdnJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMxNDI1MTUsImV4cCI6MjA5ODcxODUxNX0.09mYPR7QWSpiy4a7vFee_xfEaQAKVDQCJkDM_Y-jeA0';
+const EDGE_FN       = SUPABASE_URL + '/functions/v1/mujeeb-chat';
+/* ═══════════════════════════════════════════════════════ */
+
+let sb = null, USER = null, SETTINGS = {}, useDirectAPI = false;
+const $ = id => document.getElementById(id);
+const toast = (msg, err=false) => { const t=$('toast'); t.textContent=msg; t.className='toast show'+(err?' err':''); setTimeout(()=>t.className='toast',2600); };
+const esc = s => (s??'').toString().replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmtDate = d => new Date(d).toLocaleString('ar-OM',{dateStyle:'short',timeStyle:'short'});
+
+function initSB(){
+  if (SUPABASE_ANON.includes('ضع_مفتاح')) { return false; }
+  sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+  return true;
+}
+
+/* ─── الدخول ─── */
+async function doLogin(){
+  const email = $('lEmail').value.trim().toLowerCase(), pin = $('lPin').value.trim();
+  $('loginErr').textContent = '';
+  if(!email || !pin){ $('loginErr').textContent='أدخل البريد والرمز السري'; return; }
+  if(!initSB()){ $('loginErr').textContent='لم يتم ضبط مفتاح Supabase — راجع أعلى ملف index.html'; return; }
+  const { data, error } = await sb.from('mujeeb_users').select('*').eq('email',email).eq('pin',pin).eq('is_active',true).maybeSingle();
+  if(error){ $('loginErr').textContent='خطأ في الاتصال: '+error.message; return; }
+  if(!data){ $('loginErr').textContent='بيانات الدخول غير صحيحة أو الحساب موقوف'; return; }
+  USER = data;
+  localStorage.setItem('mujeeb_user', JSON.stringify({email, pin}));
+  enterApp();
+}
+async function tryAutoLogin(){
+  const saved = localStorage.getItem('mujeeb_user');
+  if(!saved || !initSB()) return;
+  try{
+    const {email, pin} = JSON.parse(saved);
+    const { data } = await sb.from('mujeeb_users').select('*').eq('email',email).eq('pin',pin).eq('is_active',true).maybeSingle();
+    if(data){ USER = data; enterApp(); }
+  }catch(e){}
+}
+function logout(){ localStorage.removeItem('mujeeb_user'); location.reload(); }
+
+async function enterApp(){
+  $('loginScreen').style.display='none';
+  $('app').style.display='flex';
+  $('userChip').textContent = USER.full_name + (USER.role==='admin' ? ' · مسؤول' : '');
+  if(USER.role==='admin') $('navAdmin').style.display='flex';
+  await loadSettings();
+  await ensureKnowledge();
+  loadDailyTip();
+  loadEmpDocs();
+  botSay(SETTINGS.welcome_message || 'مرحباً! أنا مجيب، اسألني عن قانون الحماية الاجتماعية أو منظومة إجادة.');
+  if(USER.role==='admin') refreshAdmin();
+}
+
+async function loadSettings(){
+  const { data } = await sb.from('mujeeb_settings').select('*');
+  (data||[]).forEach(s => SETTINGS[s.key]=s.value);
+}
+
+/* ─── الاستيراد الذاتي لقاعدة المعرفة عند أول تشغيل ─── */
+async function ensureKnowledge(){
+  const { count } = await sb.from('mujeeb_chunks').select('id',{count:'exact',head:true});
+  if((count??0) > 0) return;
+  try{
+    toast('جارٍ تهيئة قاعدة المعرفة لأول مرة...');
+    const kb = await (await fetch('mujeeb_knowledge.json')).json();
+    await sb.from('mujeeb_documents').upsert(kb.documents.map(d=>({...d,is_active:true})));
+    for(let i=0;i<kb.chunks.length;i+=40) await sb.from('mujeeb_chunks').insert(kb.chunks.slice(i,i+40));
+    toast('تم استيراد قاعدة المعرفة ✓');
+  }catch(e){ console.warn('KB import:', e); }
+}
+async function reimportKB(){
+  if(!confirm('سيتم حذف المقاطع الحالية وإعادة استيراد قاعدة المعرفة الأساسية (اللائحة + دليل إجادة). متابعة؟')) return;
+  await sb.from('mujeeb_chunks').delete().neq('chunk_index',-1);
+  const kb = await (await fetch('mujeeb_knowledge.json')).json();
+  await sb.from('mujeeb_documents').upsert(kb.documents.map(d=>({...d,is_active:true})));
+  for(let i=0;i<kb.chunks.length;i+=40) await sb.from('mujeeb_chunks').insert(kb.chunks.slice(i,i+40));
+  toast('تمت إعادة الاستيراد ✓'); refreshAdmin();
+}
+
+/* ─── النصيحة اليومية ─── */
+async function loadDailyTip(){
+  if(SETTINGS.daily_tip_enabled==='false') return;
+  const { data } = await sb.from('mujeeb_tips').select('*').eq('is_active',true).order('day_index');
+  if(!data?.length) return;
+  const dayNum = Math.floor(Date.now()/864e5);
+  const tip = data[dayNum % data.length];
+  $('tipText').textContent = tip.tip_text;
+  $('tipSrc').textContent = tip.source ? ('المصدر: '+tip.source) : '';
+  $('tipCard').style.display='block';
+}
+
+/* ─── المحادثة ─── */
+function botSay(text, withRating=false, convId=null){
+  const d = document.createElement('div'); d.className='msg bot';
+  const parts = text.split(/\n(?=المصدر|📖)/);
+  d.innerHTML = esc(parts[0]).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+  if(parts[1]) d.innerHTML += '<span class="src-line">📖 '+esc(parts[1])+'</span>';
+  $('msgs').appendChild(d);
+  if(withRating && convId){
+    const r = document.createElement('div'); r.className='rate-row';
+    r.innerHTML = `<button onclick="rate('${convId}',5,this)" title="مفيدة">👍</button><button onclick="rate('${convId}',1,this)" title="غير مفيدة">👎</button>`;
+    $('msgs').appendChild(r);
+  }
+  $('msgs').scrollTop = $('msgs').scrollHeight;
+}
+async function rate(id, v, btn){
+  await sb.from('mujeeb_conversations').update({rating:v}).eq('id',id);
+  btn.parentElement.innerHTML = '<span style="font-size:12px;color:var(--muted);padding:5px">شكراً لتقييمك ✓</span>';
+}
+function userSay(text){
+  const d = document.createElement('div'); d.className='msg user'; d.textContent=text;
+  $('msgs').appendChild(d); $('msgs').scrollTop = $('msgs').scrollHeight;
+}
+function quickAsk(btn){ $('qInput').value = btn.textContent; sendQ(); }
+
+let HISTORY = [];
+async function sendQ(){
+  const q = $('qInput').value.trim();
+  if(!q) return;
+  $('qInput').value=''; $('suggest').style.display='none';
+  userSay(q);
+  const typing = document.createElement('div'); typing.className='typing'; typing.innerHTML='<span></span><span></span><span></span>';
+  $('msgs').appendChild(typing); $('msgs').scrollTop=$('msgs').scrollHeight;
+  $('sendBtn').disabled = true;
+  try{
+    const answer = await askMujeeb(q);
+    typing.remove();
+    HISTORY.push({role:'user',content:q},{role:'assistant',content:answer});
+    // تسجيل المحادثة (في حال الاتصال المباشر — الدالة السحابية تسجّل بنفسها)
+    let convId = null;
+    if(useDirectAPI){
+      const { data } = await sb.from('mujeeb_conversations').insert({question:q,answer,user_email:USER.email}).select('id').single();
+      convId = data?.id;
+    }
+    botSay(answer, !!convId, convId);
+  }catch(e){
+    typing.remove();
+    botSay('تعذّر الاتصال بمجيب حالياً: '+ (e.message||e) +'\nيرجى المحاولة لاحقاً أو إبلاغ مسؤول النظام.');
+  }
+  $('sendBtn').disabled = false;
+}
+
+async function askMujeeb(question){
+  // 1) محاولة الدالة السحابية
+  if(!useDirectAPI){
+    try{
+      const r = await fetch(EDGE_FN,{method:'POST',
+        headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON},
+        body:JSON.stringify({question, history:HISTORY.slice(-6), user_email:USER.email})});
+      const j = await r.json();
+      if(r.ok && j.answer) return j.answer;
+      if(j.error && !/Function not found|NOT_FOUND|404/i.test(j.error)) throw new Error(j.error);
+      useDirectAPI = true;
+    }catch(e){ useDirectAPI = true; }
+  }
+  // 2) الاتصال المباشر بواجهة Anthropic (يعمل داخل معاينة Claude)
+  const ctx = await retrieveContext(question);
+  const system = `أنت "${SETTINGS.assistant_name||'مجيب'}"، المساعد الذكي الرسمي لموظفي هيئة المشاريع والمناقصات والمحتوى المحلي في سلطنة عُمان.
+قواعد صارمة:
+1. أجب فقط من المصادر المرفقة أدناه (اللائحة التنفيذية لقانون الحماية الاجتماعية، ودليل منظومة إجادة لقياس الأداء الفردي).
+2. إذا لم تجد الإجابة في المصادر قل بوضوح: "لا تتوفر هذه المعلومة في المصادر المعتمدة لديّ، أنصحك بمراجعة الجهة المختصة." ولا تجتهد من معلوماتك العامة.
+3. اذكر دائماً مصدر إجابتك في نهاية الرد بسطر يبدأ بكلمة "المصدر:" (رقم المادة أو اسم القسم في الدليل).
+4. أجب بالعربية الفصحى المبسطة وبأسلوب مهني ودود وموجز.
+${SETTINGS.answer_scope==='assist' ? '5. يمكنك تقديم نصائح إدارية عامة إذا استندت لما ورد في دليل إجادة.' : ''}
+
+المصادر المعتمدة:
+${ctx}`;
+  const resp = await fetch('https://api.anthropic.com/v1/messages',{method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1500,system,
+      messages:[...HISTORY.slice(-6),{role:'user',content:question}]})});
+  const data = await resp.json();
+  if(!resp.ok) throw new Error(data?.error?.message||'فشل الاتصال بالنموذج');
+  return (data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n');
+}
+
+/* بحث نصي بسيط في المقاطع */
+const STOP = new Set(['في','من','على','عن','إلى','الى','ما','هل','هو','هي','أن','ان','التي','الذي','مع','كم','متى','كيف','أو','او','ثم','لا','لم','لن','قد','كل','بعد','قبل','عند','هذا','هذه','ذلك','يتم','وفق','حسب']);
+function kws(q){
+  return q.replace(/[؟?،,.:؛]/g,' ').split(/\s+/)
+    .map(w=>w.replace(/^(ال|و|ب|ل|لل|بال|وال)/,''))
+    .filter(w=>w.length>=3 && !STOP.has(w)).slice(0,8);
+}
+async function retrieveContext(q){
+  const K = kws(q);
+  let rows = [];
+  if(K.length){
+    const orF = K.map(k=>`content.ilike.%${k}%`).join(',');
+    const { data } = await sb.from('mujeeb_chunks').select('content').or(orF).limit(60);
+    rows = (data||[]).map(c=>({c:c.content,s:K.reduce((n,k)=>n+(c.content.includes(k)?1:0),0)}))
+      .sort((a,b)=>b.s-a.s).slice(0,14).map(x=>x.c);
+  }
+  if(!rows.length){
+    const { data } = await sb.from('mujeeb_chunks').select('content').limit(10);
+    rows = (data||[]).map(c=>c.content);
+  }
+  return rows.join('\n\n---\n\n').slice(0,45000);
+}
+
+/* ─── التنقل ─── */
+function go(p, btn){
+  document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+  $('panel-'+p).classList.add('active');
+  document.querySelectorAll('.bottom-nav button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  if(p==='history') loadMyHistory();
+  if(p==='admin') refreshAdmin();
+}
+function adminTab(btn, id){
+  document.querySelectorAll('.tabs-admin button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.admin-sub').forEach(x=>x.style.display='none');
+  $(id).style.display='block';
+}
+
+/* ─── سجل الموظف ─── */
+async function loadMyHistory(){
+  const { data } = await sb.from('mujeeb_conversations').select('*').eq('user_email',USER.email).order('created_at',{ascending:false}).limit(50);
+  const body = $('myHistBody'); body.innerHTML='';
+  $('myHistEmpty').style.display = data?.length ? 'none':'block';
+  (data||[]).forEach(c=>{
+    body.innerHTML += `<tr><td style="white-space:nowrap">${fmtDate(c.created_at)}</td><td>${esc(c.question)}</td><td style="max-width:380px">${esc((c.answer||'').slice(0,220))}${(c.answer||'').length>220?'…':''}</td></tr>`;
+  });
+}
+async function loadEmpDocs(){
+  const { data } = await sb.from('mujeeb_documents').select('*').eq('is_active',true).order('created_at');
+  $('empDocsBody').innerHTML = (data||[]).map(d=>
+    `<tr><td><b>${esc(d.title)}</b></td><td><span class="badge role-a">${esc(d.category||'عام')}</span></td><td>${esc((d.content||'').slice(0,140))}</td></tr>`).join('');
+}
+
+/* ─── لوحة المسؤول ─── */
+async function refreshAdmin(){
+  if(USER.role!=='admin') return;
+  const [d,c,v,u] = await Promise.all([
+    sb.from('mujeeb_documents').select('id',{count:'exact',head:true}),
+    sb.from('mujeeb_chunks').select('id',{count:'exact',head:true}),
+    sb.from('mujeeb_conversations').select('id',{count:'exact',head:true}),
+    sb.from('mujeeb_users').select('id',{count:'exact',head:true}),
+  ]);
+  $('stDocs').textContent=d.count??0; $('stChunks').textContent=c.count??0;
+  $('stConvs').textContent=v.count??0; $('stUsers').textContent=u.count??0;
+  loadAdminDocs(); loadTips(); loadUsers(); loadConvs(); fillSettings();
+}
+
+async function loadAdminDocs(){
+  const { data: docs } = await sb.from('mujeeb_documents').select('*').order('created_at');
+  const { data: counts } = await sb.from('mujeeb_chunks').select('document_id');
+  const cnt = {}; (counts||[]).forEach(c=>cnt[c.document_id]=(cnt[c.document_id]||0)+1);
+  $('adminDocsBody').innerHTML = (docs||[]).map(d=>`<tr>
+    <td><b>${esc(d.title)}</b><br><small style="color:var(--muted)">${esc(d.file_name||'')}</small></td>
+    <td>${esc(d.category||'عام')}</td><td>${cnt[d.id]||0}</td>
+    <td><span class="badge ${d.is_active?'on':'off'}">${d.is_active?'مفعّل':'موقوف'}</span></td>
+    <td style="white-space:nowrap">
+      <button class="mini-btn" onclick="toggleDoc('${d.id}',${!d.is_active})">${d.is_active?'إيقاف':'تفعيل'}</button>
+      <button class="mini-btn danger" onclick="delDoc('${d.id}')">حذف</button>
+    </td></tr>`).join('');
+  $('dExisting').innerHTML = '<option value="">— مصدر جديد —</option>' + (docs||[]).map(d=>`<option value="${d.id}">${esc(d.title)}</option>`).join('');
+}
+async function toggleDoc(id, on){ await sb.from('mujeeb_documents').update({is_active:on}).eq('id',id); loadAdminDocs(); toast(on?'تم التفعيل':'تم الإيقاف'); }
+async function delDoc(id){
+  if(!confirm('حذف المصدر وجميع مقاطعه المعرفية؟')) return;
+  await sb.from('mujeeb_documents').delete().eq('id',id);
+  loadAdminDocs(); refreshAdmin(); toast('تم الحذف');
+}
+function splitContent(text){
+  // تقسيم على (المادة X) وإلا كل ~1500 حرف على حدود الفقرات
+  const parts = text.split(/(?=المادة\s*[\(（]?\s*[\d٠-٩]+)/g).map(s=>s.trim()).filter(s=>s.length>40);
+  if(parts.length>=3) return parts.map(p=>p.slice(0,6500));
+  const out=[]; let buf='';
+  text.split(/\n\n+/).forEach(p=>{
+    if((buf+p).length>1500){ if(buf) out.push(buf.trim()); buf=p; } else buf+='\n\n'+p;
+  });
+  if(buf.trim()) out.push(buf.trim());
+  return out.filter(s=>s.length>40).map(p=>p.slice(0,6500));
+}
+async function saveDoc(){
+  const title=$('dTitle').value.trim(), cat=$('dCat').value.trim()||'عام', content=$('dContent').value.trim(), exist=$('dExisting').value;
+  if(!content || (!title && !exist)){ toast('أدخل العنوان والمحتوى',true); return; }
+  let docId = exist;
+  if(exist){
+    await sb.from('mujeeb_documents').update({content:content.slice(0,500),updated_at:new Date().toISOString(),...(title?{title}:{}) }).eq('id',exist);
+    await sb.from('mujeeb_chunks').delete().eq('document_id',exist);
+  }else{
+    const { data, error } = await sb.from('mujeeb_documents').insert({title,category:cat,content:content.slice(0,500),is_active:true}).select('id').single();
+    if(error){ toast('خطأ: '+error.message,true); return; }
+    docId = data.id;
+  }
+  const chunks = splitContent(content).map((c,i)=>({document_id:docId,chunk_index:i,content:`[${title||'مصدر'} — مقطع ${i+1}]\n${c}`}));
+  for(let i=0;i<chunks.length;i+=40) await sb.from('mujeeb_chunks').insert(chunks.slice(i,i+40));
+  $('dTitle').value=$('dCat').value=$('dContent').value=''; $('dExisting').value='';
+  toast(`تم الحفظ — ${chunks.length} مقطع معرفي ✓`); refreshAdmin();
+}
+
+async function loadTips(){
+  const { data } = await sb.from('mujeeb_tips').select('*').order('day_index');
+  $('tipsBody').innerHTML = (data||[]).map((t,i)=>`<tr>
+    <td>${i+1}</td><td>${esc(t.tip_text)}</td><td><small>${esc(t.source||'')}</small></td>
+    <td><span class="badge ${t.is_active?'on':'off'}">${t.is_active?'مفعّلة':'موقوفة'}</span></td>
+    <td style="white-space:nowrap">
+      <button class="mini-btn" onclick="toggleTip('${t.id}',${!t.is_active})">${t.is_active?'إيقاف':'تفعيل'}</button>
+      <button class="mini-btn danger" onclick="delTip('${t.id}')">حذف</button>
+    </td></tr>`).join('');
+}
+async function saveTip(){
+  const txt=$('tText').value.trim(); if(!txt){ toast('أدخل نص النصيحة',true); return; }
+  const { count } = await sb.from('mujeeb_tips').select('id',{count:'exact',head:true});
+  await sb.from('mujeeb_tips').insert({tip_text:txt,source:$('tSrc').value.trim(),day_index:(count??0)+1,is_active:true});
+  $('tText').value=$('tSrc').value=''; toast('تمت الإضافة ✓'); loadTips();
+}
+async function toggleTip(id,on){ await sb.from('mujeeb_tips').update({is_active:on}).eq('id',id); loadTips(); }
+async function delTip(id){ if(confirm('حذف النصيحة؟')){ await sb.from('mujeeb_tips').delete().eq('id',id); loadTips(); } }
+
+async function loadUsers(){
+  const { data } = await sb.from('mujeeb_users').select('*').order('created_at');
+  $('usersBody').innerHTML = (data||[]).map(u=>`<tr>
+    <td><b>${esc(u.full_name)}</b><br><small style="color:var(--muted)">${esc(u.department||'')}</small></td>
+    <td dir="ltr" style="text-align:right">${esc(u.email)}</td>
+    <td><span class="badge ${u.role==='admin'?'role-a':'role-e'}">${u.role==='admin'?'مسؤول':'موظف'}</span></td>
+    <td><span class="badge ${u.is_active?'on':'off'}">${u.is_active?'نشط':'موقوف'}</span></td>
+    <td style="white-space:nowrap"><button class="mini-btn" onclick="toggleUser('${u.id}',${!u.is_active})">${u.is_active?'إيقاف':'تفعيل'}</button></td>
+    </tr>`).join('');
+}
+async function saveUser(){
+  const name=$('uName').value.trim(), email=$('uEmail').value.trim().toLowerCase(), pin=$('uPin').value.trim();
+  if(!name||!email||!pin){ toast('أكمل بيانات المستخدم',true); return; }
+  const { error } = await sb.from('mujeeb_users').insert({full_name:name,email,pin,role:$('uRole').value,department:$('uDept').value.trim(),is_active:true});
+  if(error){ toast('خطأ: '+error.message,true); return; }
+  $('uName').value=$('uEmail').value=$('uPin').value=$('uDept').value='';
+  toast('تمت الإضافة ✓'); loadUsers(); refreshAdmin();
+}
+async function toggleUser(id,on){ await sb.from('mujeeb_users').update({is_active:on}).eq('id',id); loadUsers(); }
+
+async function loadConvs(){
+  const { data } = await sb.from('mujeeb_conversations').select('*').order('created_at',{ascending:false}).limit(100);
+  $('convsBody').innerHTML = (data||[]).map(c=>`<tr>
+    <td style="white-space:nowrap">${fmtDate(c.created_at)}</td>
+    <td dir="ltr" style="text-align:right"><small>${esc(c.user_email||'—')}</small></td>
+    <td style="max-width:220px">${esc(c.question)}</td>
+    <td style="max-width:340px">${esc((c.answer||'').slice(0,180))}${(c.answer||'').length>180?'…':''}</td>
+    <td>${c.rating? (c.rating>=4?'👍':'👎') : '—'}</td></tr>`).join('');
+}
+
+function fillSettings(){
+  $('sName').value = SETTINGS.assistant_name||'مجيب';
+  $('sWelcome').value = SETTINGS.welcome_message||'';
+  $('sScope').value = SETTINGS.answer_scope||'strict';
+  $('sTip').value = SETTINGS.daily_tip_enabled||'true';
+}
+async function saveSettings(){
+  const upd = [
+    {key:'assistant_name',value:$('sName').value.trim()||'مجيب'},
+    {key:'welcome_message',value:$('sWelcome').value.trim()},
+    {key:'answer_scope',value:$('sScope').value},
+    {key:'daily_tip_enabled',value:$('sTip').value},
+  ];
+  for(const s of upd){ await sb.from('mujeeb_settings').upsert({...s,updated_at:new Date().toISOString()}); SETTINGS[s.key]=s.value; }
+  toast('تم حفظ الإعدادات ✓');
+}
+
+/* ─── PWA ─── */
+if('serviceWorker' in navigator && location.protocol.startsWith('http')){
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+tryAutoLogin();
+</script>
+</body>
+</html>
